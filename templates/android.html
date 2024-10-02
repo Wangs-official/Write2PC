@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .navbar {
+            height: 56px;
+        }
+        #sync_text {
+            width: 100%;
+            height: calc(93vh - 56px);
+            resize: none;
+        }
+        .status {
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.connected {
+            color: green;
+        }
+        .status.disconnected {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <span class="navbar-brand mb-0 h1">Write2PC</span>
+        <div class="dropdown ml-auto">
+            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-globe"></i> <span id="status" class="status">状态: 未连接</span>
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <form id="ipForm" class="px-3">
+                    <div class="form-group">
+                        <label for="ipAddress">IP 地址:</label>
+                        <input type="text" id="ipAddress" class="form-control" placeholder="控制台IP" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">连接</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid" style="padding: 0;">
+        <textarea id="sync_text" class="form-control" disabled placeholder="关闭软件后不保留内容，请即时保存"></textarea>
+    </div>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script type="text/javascript">
+        var socket;
+
+        document.getElementById('ipForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var ipAddress = document.getElementById('ipAddress').value.trim();
+            if (ipAddress) {
+                socket = io.connect(`http://${ipAddress}`);
+                
+                socket.on('connect', function() {
+                    document.getElementById('status').textContent = "状态: 已连接";
+                    document.getElementById('sync_text').disabled = false;
+                });
+
+                socket.on('disconnect', function() {
+                    document.getElementById('status').textContent = "状态: 已断开";
+                    document.getElementById('sync_text').disabled = true;
+                });
+
+                document.getElementById('sync_text').addEventListener('input', function() {
+                    var text = document.getElementById('sync_text').value;
+                    socket.emit('text_update', text);
+                });
+
+                socket.on('update_text', function(data) {
+                    document.getElementById('sync_text').value = data;
+                });
+            } else {
+                alert("请输入有效的 IP 地址和端口");
+            }
+        });
+    </script>
+</body>
+</html>

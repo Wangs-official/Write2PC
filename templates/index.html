@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Write2PC</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .full-height {
+            height: 100%;
+        }
+        #sync_text {
+            width: 100%;
+            height: calc(100% - 56px);
+            resize: none;
+        }
+        .status {
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.connected {
+            color: green;
+        }
+        .status.disconnected {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <span class="navbar-brand mb-0 h1">Write2PC</span>
+        <a href="https://github.com/Wangs-official/Write2PC">GitHub</a>
+        <span>&nbsp;&nbsp;&nbsp;</span>
+        <a href="https://github.com/Wangs-official/Write2PC">下载Android版本</a>
+    </nav>
+
+    <div class="container-fluid p-0 full-height">
+        <textarea id="sync_text" class="form-control" placeholder="关闭网页后不保留内容，请即时保存   AndroidAPP请输入控制台显示的内网IP连接,其他平台直接打开控制台显示的内网IP"></textarea>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script type="text/javascript">
+        var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
+        var textarea = document.getElementById('sync_text');
+        var statusEl = document.getElementById('status');
+
+        socket.on('reconnect', function() {
+            statusEl.textContent = "已重新连接";
+            statusEl.classList.remove('disconnected');
+            statusEl.classList.add('connected');
+        });
+
+        textarea.addEventListener('input', function() {
+            var text = textarea.value;
+            socket.emit('text_update', text);
+        });
+
+        socket.on('update_text', function(data) {
+            if (textarea.value !== data) {
+                textarea.value = data;
+            }
+        });
+
+        window.onbeforeunload = function() {
+            socket.disconnect();
+        };
+    </script>
+</body>
+</html>
